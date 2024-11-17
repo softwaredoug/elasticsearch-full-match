@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "es-exact-match"
+version = "0.1.0"
+description = "Elasticsearch exact match demo (exact NOT phrase)"
+authors = ["Doug Turnbull <softwaredoug@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+elasticsearch = "^8.16.0"
+pytest = "^8.3.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
