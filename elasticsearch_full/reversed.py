@@ -1,12 +1,10 @@
-END_OF_DATA = "SENTINELENDOFDATA"
-
-
 def analysis():
-    configured_analyzer = "first_upper"
+    configured_analyzers = ["first_upper", "last_term"]
+
     analysis_settings = {
         "analyzer": {
-            configured_analyzer: {
-                "tokenizer": "standard",
+            "first_upper": {
+                "tokenizer": "keyword",
                 "filter": [
                     "lowercase",
                     "english_stop",
@@ -14,21 +12,24 @@ def analysis():
                     "english_stemmer",
                     "upper_begin",
                 ]
-            }
-        },
-        "char_filter": {
-            "append_end_of_data": {
-                "type": "pattern_replace",
-                "pattern": "(^.*$)",
-                "replacement": f"$1{END_OF_DATA}"
+            },
+            # Get the last term
+            "last_term": {
+                "tokenizer": "keyword",
+                "filter": [
+                    "lowercase",
+                    "reverse",
+                    "word_delimiter",
+                    "keep_first",
+                    "reverse",
+                    # Normal filters
+                    "english_stop",
+                    "english_keywords",
+                    "english_stemmer",
+                ]
             }
         },
         "filter": {
-            "remove_end_of_data": {
-                "type": "pattern_replace",
-                "pattern": f"(^.*?){END_OF_DATA}$",
-                "replacement": "$1"
-            },
             "upper_begin": {
                 "type": "condition",
                 "filter": "uppercase",
@@ -36,16 +37,12 @@ def analysis():
                     "source": "token.position == 0"
                 }
             },
-            "mark_begin_end": {
-                "type": "condition",
+            "keep_first": {
+                "type": "predicate_token_filter",
                 "filter": "uppercase",
                 "script": {
-                    "source": f"""
-                        ((token.position == 0) ||
-                         (token.term.length() > {len(END_OF_DATA)}
-                          && token.term.subSequence(token.term.length() - {len(END_OF_DATA)}, token.term.length()).equals('{END_OF_DATA.lower()}')))
-                    """
-                },
+                    "source": "token.position == 0"
+                }
             },
             "english_stop": {
                 "type": "stop",
@@ -68,11 +65,22 @@ def analysis():
     return analysis_settings, configured_analyzer
 
 
-def query(field, keywords):
+def query(fields, keywords):
     return {
         "query": {
-            "match_phrase": {
-                field: keywords
+            "bool": {
+                "must": [
+                    {
+                        "match_phrase": {
+                            fields[0]: keywords
+                        }
+                    },
+                    {
+                        "match": {
+                            fields[1]: keywords
+                        }
+                    }
+                ]
             }
         }
     }
