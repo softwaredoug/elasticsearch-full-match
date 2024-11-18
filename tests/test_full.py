@@ -1,6 +1,5 @@
 """Tests a full field match - defined by every query token matching every position and nothing else."""
 import pytest
-import json
 import elasticsearch_full.shingles as shingles
 import elasticsearch_full.conditional as conditional
 import elasticsearch_full.keyword as keyword
@@ -60,15 +59,7 @@ class ElasticsearchFixture:
 
     def search(self, keywords, profile=True):
         body = self.query_fn("title", keywords)
-        if profile:
-            body['profile'] = True
         response = self.es.search(index=self.index_name, body=body)
-        if profile and 'profile' in response:
-            took = response['took']
-            print("************")
-            print(f"Query: {keywords}")
-            print(f"Query took {took}ms")
-            print(json.dumps(response["profile"], indent=2))
         return response
 
 
@@ -82,7 +73,7 @@ TEST_DOCS = [
 ]
 
 
-@pytest.fixture(scope="module", params=[conditional])  # [sentinel, shingles, conditional, keyword])
+@pytest.fixture(scope="module", params=[sentinel, shingles, conditional, keyword])
 def elasticsearch_fixture(request):
     module = request.param
     index_name = module.__name__.split(".")[-1]

@@ -6,6 +6,7 @@ def analysis():
     analysis_settings = {
         "analyzer": {
             configured_analyzer: {
+                "char_filter": ["append_sentinel"],
                 "tokenizer": "standard",
                 "filter": [
                     "lowercase",
@@ -16,26 +17,28 @@ def analysis():
                 ]
             }
         },
+        # Possible way of marking last term?
         "char_filter": {
             "append_end_of_data": {
                 "type": "pattern_replace",
                 "pattern": "(^.*$)",
                 "replacement": f"$1{END_OF_DATA}"
+            },
+            "append_sentinel": {
+                "type": "pattern_replace",
+                "pattern": "(^.*$)",
+                "replacement": f"$1 {END_OF_DATA}"
             }
         },
         "filter": {
+            # Could we remove this?
             "remove_end_of_data": {
                 "type": "pattern_replace",
                 "pattern": f"(^.*?){END_OF_DATA}$",
                 "replacement": "$1"
             },
-            "upper_begin": {
-                "type": "condition",
-                "filter": "uppercase",
-                "script": {
-                    "source": "token.position == 0"
-                }
-            },
+            # Then uppercase it before stemming, etc?
+            # Sadly when we do this, the upper cased term is not stemmed
             "mark_begin_end": {
                 "type": "condition",
                 "filter": "uppercase",
@@ -46,6 +49,13 @@ def analysis():
                           && token.term.subSequence(token.term.length() - {len(END_OF_DATA)}, token.term.length()).equals('{END_OF_DATA.lower()}')))
                     """
                 },
+            },
+            "upper_begin": {
+                "type": "condition",
+                "filter": "uppercase",
+                "script": {
+                    "source": "token.position == 0"
+                }
             },
             "english_stop": {
                 "type": "stop",
